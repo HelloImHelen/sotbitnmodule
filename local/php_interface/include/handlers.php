@@ -20,7 +20,6 @@ class CheckBasketItems
     public static function OnBeforeBasketAddHandler(Event $event)
     {
         /** @var Basket */
-
         $basket = $event->getParameter('ENTITY');
 
         if ($basket->getId() > 0) {
@@ -59,18 +58,6 @@ class CheckBasketItems
                 );
             }
 
-            $basketForDefaultStore = findOrCreateBasketForStore($fUserId, $basket->getSiteId(), $defaultStoreId);
-            if (!$basketForDefaultStore) {
-                return new \Bitrix\Main\EventResult(
-                    \Bitrix\Main\EventResult::ERROR,
-                    new Sale\ResultError(
-                        Loc::getMessage('BASKET_CREATE_ERROR'),
-                        'BASKET_CREATE_ERROR'
-                    )
-                );
-            }
-            $basket->setField('FUSER_ID', $basketForDefaultStore->getFUserId());
-            $basket->setField('ORDER_ID', $basketForDefaultStore->getOrderId());
         } catch (\Exception $e) {
             return new \Bitrix\Main\EventResult(
                 \Bitrix\Main\EventResult::ERROR,
@@ -163,47 +150,5 @@ class CheckBasketItems
         }
 
         return $defaultStoreId;
-    }
-
-    /**
-     * Поиск или создание корзины для указанного склада
-     *
-     * @param int $fUserId ID покупателя
-     * @param string $siteId ID сайта
-     * @param int $storeId ID склада
-     * @return \Bitrix\Sale\Basket|null
-     */
-    function findOrCreateBasketForStore($fUserId, $siteId, $storeId)
-    {
-        $registry = Sale\Registry::getInstance(Sale\Registry::REGISTRY_TYPE_ORDER);
-        $orderClassName = $registry->getOrderClassName();
-        $parameters = [
-            'filter' => [
-                '=USER_ID' => Sale\Fuser::getIdByUserId($fUserId),
-                '=LID' => $siteId,
-                '=STATUS_ID' => 'CR',
-                'PROPERTY_STORE_ID' => $storeId
-            ],
-            'order' => ['ID' => 'DESC'],
-            'limit' => 1
-        ];
-
-        $orderList = $orderClassName::getList($parameters);
-        if ($orderData = $orderList->fetch()) {
-            $order = $orderClassName::load($orderData['ID']);
-            return $order->getBasket();
-        }
-        try {
-            $order = $orderClassName::create($siteId, Sale\Fuser::getIdByUserId($fUserId));
-            $propertyCollection = $order->getPropertyCollection();
-            $storeProp = $propertyCollection->getItemByOrderPropertyCode('STORE_ID');
-            if ($storeProp) {
-                $storeProp->setValue($storeId);
-            }
-            $order->save();
-            return $order->getBasket();
-        } catch (\Exception $e) {
-            return null;
-        }
     }
 }
