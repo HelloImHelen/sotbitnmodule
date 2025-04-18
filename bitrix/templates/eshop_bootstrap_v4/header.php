@@ -60,8 +60,8 @@ $curPage = $APPLICATION->GetCurPage(true);
 
 				<div class="col-auto d-none d-md-block bx-header-personal">
 					<?$APPLICATION->IncludeComponent(
-						"bitrix:sale.basket.basket.line",
-						"bootstrap_v4",
+						"sotbit:multibasket.multibasket",
+						".default",
 						array(
 							"PATH_TO_BASKET" => SITE_DIR."personal/cart/",
 							"PATH_TO_PERSONAL" => SITE_DIR."personal/",
